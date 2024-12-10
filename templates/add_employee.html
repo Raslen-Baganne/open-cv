@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Employee</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 50px;
+        }
+        .video-container {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add New Employee</h1>
+        {% if request.args.get('message') %}
+            <div class="alert alert-success" role="alert">
+                {{ request.args.get('message') }}
+            </div>
+        {% endif %}
+        {% if request.args.get('error') %}
+            <div class="alert alert-danger" role="alert">
+                {{ request.args.get('error') }}
+            </div>
+        {% endif %}
+        <form id="addEmployeeForm" action="/add_employee" method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="age" class="form-label">Age</label>
+                <input type="number" class="form-control" id="age" name="age" required>
+            </div>
+            <div class="mb-3">
+                <label for="gender" class="form-label">Gender</label>
+                <select class="form-select" id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="videoElement" class="form-label">Live Video Feed</label>
+                <div class="video-container">
+                    <video id="videoElement" autoplay></video>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Employee</button>
+        </form>
+        <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Start video stream
+        const video = document.getElementById('videoElement');
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                console.log('Webcam access granted');
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Error accessing webcam:', err);
+                alert('Could not access the webcam. Please check your camera settings.');
+            });
+
+        // Real-time face detection logic
+        function detectFaces() {
+            fetch('/detect_faces')
+                .then(response => response.body)
+                .then(body => {
+                    const reader = body.getReader();
+                    const decoder = new TextDecoder();
+                    let result = '';
+                    reader.read().then(function processText({ done, value }) {
+                        if (done) return;
+                        result += decoder.decode(value);
+                        // Process the received data for face detection
+                        // Update the UI as needed
+                        reader.read().then(processText);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error fetching detection:', err);
+                });
+        }
+
+        setInterval(detectFaces, 1000); // Call the detectFaces function every second
+    </script>
+</body>
+</html>
